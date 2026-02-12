@@ -1,0 +1,191 @@
+import React from 'react';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { LoginScreen } from '../screens/LoginScreen';
+import { RegisterScreen } from '../screens/RegisterScreen';
+import { HomeScreen } from '../screens/HomeScreen';
+import { ProfileScreen } from '../screens/ProfileScreen';
+import { VersementScreen } from '../screens/VersementScreen';
+import { ChartScreen } from '../screens/ChartScreen';
+import { SettingsScreen } from '../screens/SettingsScreen';
+
+const TAB_ICON_SIZE = 24;
+
+export type AuthStackParamList = {
+  Login: undefined;
+  Register: undefined;
+};
+
+export type MainTabParamList = {
+  Home: undefined;
+  Versement: undefined;
+  Chart: undefined;
+  Profile: undefined;
+  Settings: undefined;
+};
+
+const AuthStack = createNativeStackNavigator<AuthStackParamList>();
+const Tab = createBottomTabNavigator<MainTabParamList>();
+
+function MainTabs() {
+  const { theme } = useTheme();
+  const { t } = useLanguage();
+
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: true,
+        headerStyle: { backgroundColor: theme.surface },
+        headerTintColor: theme.text,
+        headerShadowVisible: false,
+        tabBarStyle: {
+          backgroundColor: theme.tabBar,
+          borderTopColor: theme.border,
+          borderTopWidth: 1,
+        },
+        tabBarActiveTintColor: theme.tabActive,
+        tabBarInactiveTintColor: theme.tabInactive,
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarIconStyle: { marginBottom: -2 },
+      }}
+    >
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{
+          title: t('home.title'),
+          tabBarLabel: t('home.title'),
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'home' : 'home-outline'}
+              size={size ?? TAB_ICON_SIZE}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Versement"
+        component={VersementScreen}
+        options={{
+          title: t('versement.title'),
+          tabBarLabel: t('versement.title'),
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'wallet' : 'wallet-outline'}
+              size={size ?? TAB_ICON_SIZE}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Chart"
+        component={ChartScreen}
+        options={{
+          title: t('chart.title'),
+          tabBarLabel: t('chart.title'),
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'trending-up' : 'trending-up-outline'}
+              size={size ?? TAB_ICON_SIZE}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          title: t('profile.title'),
+          tabBarLabel: t('profile.title'),
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'person' : 'person-outline'}
+              size={size ?? TAB_ICON_SIZE}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={{
+          title: t('settings.title'),
+          tabBarLabel: t('settings.title'),
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'settings' : 'settings-outline'}
+              size={size ?? TAB_ICON_SIZE}
+              color={color}
+            />
+          ),
+        }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+export function AppNavigator() {
+  const { theme } = useTheme();
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={[styles.loading, { backgroundColor: theme.background }]}>
+        <ActivityIndicator size="large" color={theme.primary} />
+      </View>
+    );
+  }
+
+  const navTheme = {
+    ...DefaultTheme,
+    dark: theme.background === '#0F172A',
+    colors: {
+      ...DefaultTheme.colors,
+      primary: theme.primary,
+      background: theme.background,
+      card: theme.surface,
+      text: theme.text,
+      border: theme.border,
+      notification: theme.primary,
+    },
+    fonts: DefaultTheme.fonts ?? {
+      regular: { fontFamily: 'System', fontWeight: '400' as const },
+      medium: { fontFamily: 'System', fontWeight: '500' as const },
+      bold: { fontFamily: 'System', fontWeight: '600' as const },
+      heavy: { fontFamily: 'System', fontWeight: '700' as const },
+    },
+  };
+
+  return (
+    <NavigationContainer theme={navTheme}>
+      {user ? (
+        <MainTabs />
+      ) : (
+        <AuthStack.Navigator
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: theme.background },
+            animation: 'slide_from_right',
+          }}
+        >
+          <AuthStack.Screen name="Login" component={LoginScreen} />
+          <AuthStack.Screen name="Register" component={RegisterScreen} />
+        </AuthStack.Navigator>
+      )}
+    </NavigationContainer>
+  );
+}
+
+const styles = StyleSheet.create({
+  loading: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+});
