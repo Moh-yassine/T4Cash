@@ -22,9 +22,18 @@ create table if not exists public.versements (
   unique(user_id, date)
 );
 
+create table if not exists public.trader_payments (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  amount numeric not null check (amount > 0),
+  paid_at date not null default (now()::date),
+  created_at timestamptz default now()
+);
+
 -- RLS
 alter table public.profiles enable row level security;
 alter table public.versements enable row level security;
+alter table public.trader_payments enable row level security;
 
 create policy "Users can read own profile"
   on public.profiles for select
@@ -49,6 +58,14 @@ create policy "Users can insert own versements"
 create policy "Users can update own versements"
   on public.versements for update
   using (auth.uid() = user_id);
+
+create policy "Users can read own trader payments"
+  on public.trader_payments for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own trader payments"
+  on public.trader_payments for insert
+  with check (auth.uid() = user_id);
 
 -- Trigger: créer un profil à l'inscription
 create or replace function public.handle_new_user()

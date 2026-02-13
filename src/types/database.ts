@@ -61,6 +61,29 @@ export interface Database {
           created_at?: string;
         };
       };
+      trader_payments: {
+        Row: {
+          id: string;
+          user_id: string;
+          amount: number;
+          paid_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          amount: number;
+          paid_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          amount?: number;
+          paid_at?: string;
+          created_at?: string;
+        };
+      };
     };
   };
 }
@@ -68,3 +91,5 @@ export interface Database {
 export type Profile = Database['public']['Tables']['profiles']['Row'];
 export type Versement = Database['public']['Tables']['versements']['Row'];
 export type VersementInsert = Database['public']['Tables']['versements']['Insert'];
+export type TraderPayment = Database['public']['Tables']['trader_payments']['Row'];
+export type TraderPaymentInsert = Database['public']['Tables']['trader_payments']['Insert'];

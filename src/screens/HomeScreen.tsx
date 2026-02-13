@@ -90,6 +90,15 @@ export function HomeScreen() {
           </Text>
         </View>
       </View>
+
+      <View style={[styles.info, { backgroundColor: theme.surface }]}>
+        <Text style={[styles.infoTitle, { color: theme.text }]}>
+          {t('versement.rulesTitle')}
+        </Text>
+        <Text style={[styles.infoSub, { color: theme.textSecondary }]}>
+          {t('versement.rulesDesc')}
+        </Text>
+      </View>
     </AnimatedScreen>
   );
 }
@@ -124,4 +133,7 @@ const styles = StyleSheet.create({
   },
   miniLabel: { fontSize: 12 },
   miniValue: { fontSize: 18, fontWeight: '700', marginTop: 4 },
+  info: { padding: 16, borderRadius: 16, marginTop: 16 },
+  infoTitle: { fontSize: 14, fontWeight: '600' },
+  infoSub: { fontSize: 12, marginTop: 4 },
 });

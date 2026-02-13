@@ -14,6 +14,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { AnimatedScreen } from '../components/AnimatedScreen';
+import { TraderPaymentPanel } from '../components/TraderPaymentPanel';
 import { OBJECTIF_QUOTIDIEN_EUR, getTraderShare, isWorkingDay } from '../constants/trading';
 
 export function VersementScreen() {
@@ -153,19 +154,7 @@ export function VersementScreen() {
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.info, { backgroundColor: theme.surface }]}>
-          <Text style={[styles.infoTitle, { color: theme.text }]}>
-            {t('versement.rulesTitle')}
-          </Text>
-          <Text style={[styles.infoSub, { color: theme.textSecondary }]}>
-            {t('versement.rulesDesc')}
-          </Text>
-          {todayEntry !== null && (
-            <Text style={[styles.saved, { color: theme.success }]}>
-              {t('versement.todaySaved')} +{todayEntry.gains.toFixed(2)} € / -{todayEntry.pertes.toFixed(2)} €
-            </Text>
-          )}
-        </View>
+        <TraderPaymentPanel />
       </ScrollView>
     </AnimatedScreen>
   );
@@ -219,8 +208,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  info: { padding: 16, borderRadius: 16 },
-  infoTitle: { fontSize: 14, fontWeight: '600' },
-  infoSub: { fontSize: 12, marginTop: 4 },
-  saved: { fontSize: 12, marginTop: 8 },
 });
