@@ -46,20 +46,22 @@ export function VersementScreen() {
     if (!user) return;
     const g = parseFloat(gains) || 0;
     const p = parseFloat(pertes) || 0;
+    const nextGains = (todayEntry?.gains ?? 0) + g;
+    const nextPertes = (todayEntry?.pertes ?? 0) + p;
     setLoading(true);
     const { error } = await supabase.from('versements').upsert(
       {
         user_id: user.id,
         date: todayStr,
-        gains: g,
-        pertes: p,
+        gains: nextGains,
+        pertes: nextPertes,
       },
       { onConflict: 'user_id,date' }
     );
     setLoading(false);
     if (error) Alert.alert(t('common.error'), error.message);
     else {
-      setTodayEntry({ gains: g, pertes: p });
+      setTodayEntry({ gains: nextGains, pertes: nextPertes });
       setGains('');
       setPertes('');
       Alert.alert(t('common.ok'), t('versement.saved'));

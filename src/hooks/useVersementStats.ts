@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -12,24 +13,24 @@ export type VersementRow = { date: string; gains: number; pertes: number };
 export function useVersementStats() {
   const { user } = useAuth();
   const [versements, setVersements] = useState<VersementRow[]>([]);
-
-  useEffect(() => {
+  const fetchVersements = useCallback(() => {
     if (!user) return;
     const from = new Date();
     from.setMonth(from.getMonth() - 1);
     const fromStr = from.toISOString().slice(0, 10);
 
-    const fetch = () => {
-      supabase
-        .from('versements')
-        .select('date, gains, pertes')
-        .eq('user_id', user.id)
-        .gte('date', fromStr)
-        .order('date', { ascending: true })
-        .then(({ data }) => setVersements((data as VersementRow[]) ?? []));
-    };
+    supabase
+      .from('versements')
+      .select('date, gains, pertes')
+      .eq('user_id', user.id)
+      .gte('date', fromStr)
+      .order('date', { ascending: true })
+      .then(({ data }) => setVersements((data as VersementRow[]) ?? []));
+  }, [user]);
 
-    fetch();
+  useEffect(() => {
+    if (!user) return;
+    fetchVersements();
 
     const channel = supabase
       .channel('versements-changes')
@@ -41,14 +42,20 @@ export function useVersementStats() {
           table: 'versements',
           filter: `user_id=eq.${user.id}`,
         },
-        () => fetch()
+        () => fetchVersements()
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, fetchVersements]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchVersements();
+    }, [fetchVersements])
+  );
 
   const now = new Date();
   const year = now.getFullYear();
