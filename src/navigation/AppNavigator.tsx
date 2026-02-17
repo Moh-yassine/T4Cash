@@ -14,6 +14,7 @@ import { ProfileScreen } from '../screens/ProfileScreen';
 import { VersementScreen } from '../screens/VersementScreen';
 import { ChartScreen } from '../screens/ChartScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
+import { AdminUsersScreen } from '../screens/AdminUsersScreen';
 
 const TAB_ICON_SIZE = 24;
 
@@ -30,8 +31,14 @@ export type MainTabParamList = {
   Settings: undefined;
 };
 
+export type RootStackParamList = {
+  MainTabs: undefined;
+  AdminUsers: undefined;
+};
+
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
+const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 function MainTabs() {
   const { theme } = useTheme();
@@ -136,6 +143,7 @@ function MainTabs() {
 
 export function AppNavigator() {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -169,7 +177,21 @@ export function AppNavigator() {
   return (
     <NavigationContainer theme={navTheme}>
       {user ? (
-        <MainTabs />
+        <RootStack.Navigator
+          screenOptions={{
+            headerStyle: { backgroundColor: theme.surface },
+            headerTintColor: theme.text,
+            headerShadowVisible: false,
+            contentStyle: { backgroundColor: theme.background },
+          }}
+        >
+          <RootStack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
+          <RootStack.Screen
+            name="AdminUsers"
+            component={AdminUsersScreen}
+            options={{ title: t('admin.title') }}
+          />
+        </RootStack.Navigator>
       ) : (
         <AuthStack.Navigator
           screenOptions={{

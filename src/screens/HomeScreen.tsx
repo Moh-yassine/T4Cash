@@ -1,10 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { AnimatedScreen } from '../components/AnimatedScreen';
 import { useVersementStats } from '../hooks/useVersementStats';
+import type { RootStackParamList } from '../navigation/AppNavigator';
 
 import { OBJECTIF_QUOTIDIEN_EUR } from '../constants/trading';
 
@@ -12,6 +15,7 @@ export function HomeScreen() {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const { profile } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     totalNet,
     objectifMensuel,
@@ -99,6 +103,15 @@ export function HomeScreen() {
           {t('versement.rulesDesc')}
         </Text>
       </View>
+
+      {profile?.role === 'admin' && (
+        <TouchableOpacity
+          style={[styles.adminBtn, { backgroundColor: theme.primary }]}
+          onPress={() => navigation.navigate('AdminUsers')}
+        >
+          <Text style={styles.adminBtnText}>{t('admin.open')}</Text>
+        </TouchableOpacity>
+      )}
     </AnimatedScreen>
   );
 }
@@ -136,4 +149,11 @@ const styles = StyleSheet.create({
   info: { padding: 16, borderRadius: 16, marginTop: 16 },
   infoTitle: { fontSize: 14, fontWeight: '600' },
   infoSub: { fontSize: 12, marginTop: 4 },
+  adminBtn: {
+    marginTop: 16,
+    padding: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  adminBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });

@@ -17,6 +17,7 @@ export interface Database {
           address: string | null;
           updated_at: string;
           email: string | null;
+          role: 'user' | 'admin';
         };
         Insert: {
           id: string;
@@ -25,6 +26,7 @@ export interface Database {
           address?: string | null;
           updated_at?: string;
           email?: string | null;
+          role?: 'user' | 'admin';
         };
         Update: {
           id?: string;
@@ -33,6 +35,7 @@ export interface Database {
           address?: string | null;
           updated_at?: string;
           email?: string | null;
+          role?: 'user' | 'admin';
         };
       };
       versements: {

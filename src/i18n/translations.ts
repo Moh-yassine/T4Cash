@@ -92,6 +92,15 @@ export const translations = {
       language: 'Langue',
       logout: 'Déconnexion',
     },
+    admin: {
+      title: 'Admin utilisateurs',
+      open: 'Voir les utilisateurs',
+      subtitle: 'Suivi des restes à payer et historique des paiements trader',
+      remaining: 'Reste à payer',
+      showHistory: 'Voir historique',
+      hideHistory: 'Masquer historique',
+      noHistory: 'Aucun paiement enregistré pour cet utilisateur.',
+    },
     common: {
       loading: 'Chargement...',
       error: 'Erreur',
@@ -192,6 +201,15 @@ export const translations = {
       dark: 'Dark',
       language: 'Language',
       logout: 'Log out',
+    },
+    admin: {
+      title: 'Admin users',
+      open: 'View users',
+      subtitle: 'Track remaining trader dues and payment history',
+      remaining: 'Remaining to pay',
+      showHistory: 'Show history',
+      hideHistory: 'Hide history',
+      noHistory: 'No payments recorded for this user.',
     },
     common: {
       loading: 'Loading...',
