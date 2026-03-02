@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "t4cash",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -24,7 +25,10 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./supabase/email-templates/logo-T4Cash.png"
+    },
+    "plugins": [
+      ["@stripe/stripe-react-native", { "merchantIdentifier": "merchant.com.t4cash" }]
+    ]
   }
 }

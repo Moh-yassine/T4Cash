@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,10 +11,20 @@ export function SettingsScreen() {
   const { signOut } = useAuth();
 
   const handleLogout = () => {
-    Alert.alert(t('settings.logout'), 'Êtes-vous sûr ?', [
-      { text: t('common.cancel'), style: 'cancel' },
-      { text: t('settings.logout'), style: 'destructive', onPress: signOut },
-    ]);
+    if (Platform.OS === 'web') {
+      if (window.confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
+        signOut();
+      }
+    } else {
+      Alert.alert(t('settings.logout'), 'Êtes-vous sûr ?', [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('settings.logout'),
+          style: 'destructive',
+          onPress: () => signOut(),
+        },
+      ]);
+    }
   };
 
   return (

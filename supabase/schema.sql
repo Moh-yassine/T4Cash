@@ -122,7 +122,7 @@ begin
     p.username,
     coalesce(d.total_due, 0)::numeric as total_due,
     coalesce(pa.total_paid, 0)::numeric as total_paid,
-    greatest(coalesce(d.total_due, 0) - coalesce(pa.total_paid, 0), 0)::numeric as remaining
+    coalesce(d.total_due, 0)::numeric as remaining
   from public.profiles p
   left join due_by_user d on d.user_id = p.id
   left join paid_by_user pa on pa.user_id = p.id

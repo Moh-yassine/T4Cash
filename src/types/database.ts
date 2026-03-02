@@ -71,6 +71,7 @@ export interface Database {
           amount: number;
           paid_at: string;
           created_at: string;
+          stripe_payment_id?: string | null;
         };
         Insert: {
           id?: string;
@@ -78,6 +79,7 @@ export interface Database {
           amount: number;
           paid_at?: string;
           created_at?: string;
+          stripe_payment_id?: string | null;
         };
         Update: {
           id?: string;

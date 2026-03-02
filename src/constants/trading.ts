@@ -1,8 +1,14 @@
 /** Capital de départ de l'utilisateur, en euros */
 export const INITIAL_CAPITAL_EUR = 1000;
 
-/** Objectif net par jour (lundi–vendredi), en euros */
+/** Objectif mensuel fixe : 2000 € */
+export const OBJECTIF_MENSUEL_EUR = 2000;
+
+/** Objectif net par jour : 100 € */
 export const OBJECTIF_QUOTIDIEN_EUR = 100;
+
+/** Jours ouvrés par mois : 5 jours/semaine × 4 semaines = 20 */
+export const WORKING_DAYS_PER_MONTH = 20;
 
 /** Part versée au trader sur le net (0–1). 30% = 0.3 */
 export const TRADER_PERCENT = 0.3;
@@ -13,21 +19,14 @@ export function isWorkingDay(date: Date): boolean {
   return day >= 1 && day <= 5;
 }
 
-/** Nombre de jours ouvrés dans le mois (lun–ven) */
-export function getWorkingDaysInMonth(year: number, month: number): number {
-  let count = 0;
-  const d = new Date(year, month, 1);
-  const last = new Date(year, month + 1, 0);
-  while (d <= last) {
-    if (isWorkingDay(d)) count++;
-    d.setDate(d.getDate() + 1);
-  }
-  return count;
+/** Nombre de jours ouvrés dans le mois : toujours 20 (4 semaines × 5 jours) */
+export function getWorkingDaysInMonth(_year: number, _month: number): number {
+  return WORKING_DAYS_PER_MONTH;
 }
 
-/** Objectif mensuel = 100 € × nombre de jours ouvrés du mois */
-export function getObjectifMensuel(year: number, month: number): number {
-  return OBJECTIF_QUOTIDIEN_EUR * getWorkingDaysInMonth(year, month);
+/** Objectif mensuel fixe : 2000 € */
+export function getObjectifMensuel(_year: number, _month: number): number {
+  return OBJECTIF_MENSUEL_EUR;
 }
 
 /** Part trader pour un net donné (30% du net si > 0) */

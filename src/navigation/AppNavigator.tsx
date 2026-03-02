@@ -2,13 +2,16 @@ import React from 'react';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
+import { ForgotPasswordScreen } from '../screens/ForgotPasswordScreen';
+import { UpdatePasswordScreen } from '../screens/UpdatePasswordScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { VersementScreen } from '../screens/VersementScreen';
@@ -21,6 +24,7 @@ const TAB_ICON_SIZE = 24;
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
+  ForgotPassword: undefined;
 };
 
 export type MainTabParamList = {
@@ -34,6 +38,7 @@ export type MainTabParamList = {
 export type RootStackParamList = {
   MainTabs: undefined;
   AdminUsers: undefined;
+  UpdatePassword: undefined;
 };
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
@@ -43,6 +48,12 @@ const RootStack = createNativeStackNavigator<RootStackParamList>();
 function MainTabs() {
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const insets = useSafeAreaInsets();
+
+  const tabBarPaddingBottom = Platform.OS === 'web'
+    ? 24
+    : Math.max(insets.bottom, 12);
+  const tabBarPaddingTop = 10;
 
   return (
     <Tab.Navigator
@@ -55,6 +66,9 @@ function MainTabs() {
           backgroundColor: theme.tabBar,
           borderTopColor: theme.border,
           borderTopWidth: 1,
+          paddingBottom: tabBarPaddingBottom,
+          paddingTop: tabBarPaddingTop,
+          minHeight: 56 + tabBarPaddingBottom,
         },
         tabBarActiveTintColor: theme.tabActive,
         tabBarInactiveTintColor: theme.tabInactive,
@@ -144,7 +158,7 @@ function MainTabs() {
 export function AppNavigator() {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { user, loading } = useAuth();
+  const { user, loading, isRecoverySession } = useAuth();
 
   if (loading) {
     return (
@@ -176,7 +190,16 @@ export function AppNavigator() {
 
   return (
     <NavigationContainer theme={navTheme}>
-      {user ? (
+      {user && isRecoverySession ? (
+        <RootStack.Navigator
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: '#050810' },
+          }}
+        >
+          <RootStack.Screen name="UpdatePassword" component={UpdatePasswordScreen} />
+        </RootStack.Navigator>
+      ) : user ? (
         <RootStack.Navigator
           screenOptions={{
             headerStyle: { backgroundColor: theme.surface },
@@ -196,12 +219,13 @@ export function AppNavigator() {
         <AuthStack.Navigator
           screenOptions={{
             headerShown: false,
-            contentStyle: { backgroundColor: theme.background },
+            contentStyle: { backgroundColor: '#050810' },
             animation: 'slide_from_right',
           }}
         >
           <AuthStack.Screen name="Login" component={LoginScreen} />
           <AuthStack.Screen name="Register" component={RegisterScreen} />
+          <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         </AuthStack.Navigator>
       )}
     </NavigationContainer>

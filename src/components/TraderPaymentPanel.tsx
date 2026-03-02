@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,41 +8,136 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { useStripe } from '@stripe/stripe-react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useTraderBalance } from '../hooks/useTraderBalance';
-
+import { PaymentSuccessModal } from './PaymentSuccessModal';
 function parseAmount(input: string): number {
   const normalized = input.replace(',', '.').trim();
   const value = parseFloat(normalized);
   return Number.isFinite(value) ? value : 0;
 }
 
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
+
 export function TraderPaymentPanel() {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { loading, saving, remaining, addPayment } = useTraderBalance();
+  const { session } = useAuth();
+  const navigation = useNavigation();
+  const { loading, saving, remaining, refresh, addPayment } = useTraderBalance();
+  const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [expanded, setExpanded] = useState(false);
   const [amountInput, setAmountInput] = useState('');
+  const [stripePaying, setStripePaying] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+
+  const handleSuccessModalDismiss = useCallback(() => {
+    setShowSuccessModal(false);
+    (navigation as any).navigate('Home');
+  }, [navigation]);
 
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
 
-  const onPay = async () => {
+  const onPayWithStripe = async () => {
     const amount = parseAmount(amountInput);
     if (amount <= 0) {
       Alert.alert(t('common.error'), t('versement.paymentInvalid'));
       return;
     }
-    const { error } = await addPayment(amount, todayStr);
-    if (error) {
-      Alert.alert(t('common.error'), error);
+
+    const token = session?.access_token;
+    if (!token) {
+      Alert.alert(t('common.error'), 'Session expirée. Reconnectez-vous.');
       return;
     }
-    setAmountInput('');
-    Alert.alert(t('common.ok'), t('versement.paymentSaved'));
+
+    setStripePaying(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-intent`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ amount }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error ?? 'Erreur serveur');
+      }
+
+      const { clientSecret, paymentIntentId } = data;
+      if (!clientSecret) throw new Error('Client secret manquant');
+
+      const piIdFromSecret = clientSecret.includes('_secret_') ? clientSecret.split('_secret_')[0] : null;
+      const piId = paymentIntentId ?? piIdFromSecret;
+
+      const { error: initError } = await initPaymentSheet({
+        paymentIntentClientSecret: clientSecret,
+        merchantDisplayName: 'T4Cash',
+      });
+
+      if (initError) {
+        throw new Error(initError.message);
+      }
+
+      const { error: presentError } = await presentPaymentSheet();
+
+      if (presentError) {
+        if (presentError.code === 'Canceled') return;
+        throw new Error(presentError.message);
+      }
+
+      let recorded = false;
+      if (piId && token) {
+        try {
+          const res = await fetch(`${SUPABASE_URL}/functions/v1/record-stripe-payment`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ paymentIntentId: piId }),
+          });
+          const body = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
+          recorded = res.ok === true;
+          if (!recorded && amount > 0) {
+            const { error } = await addPayment(amount, todayStr);
+            if (!error) recorded = true;
+          }
+        } catch {
+          if (amount > 0) {
+            const { error } = await addPayment(amount, todayStr);
+            if (!error) recorded = true;
+          }
+        }
+      } else if (amount > 0) {
+        const { error } = await addPayment(amount, todayStr);
+        if (!error) recorded = true;
+      }
+
+      setAmountInput('');
+      await refresh();
+      setTimeout(() => refresh(), 1000);
+      setTimeout(() => refresh(), 2500);
+      setShowSuccessModal(true);
+    } catch (err) {
+      Alert.alert(
+        t('common.error'),
+        err instanceof Error ? err.message : 'Erreur lors du paiement'
+      );
+    } finally {
+      setStripePaying(false);
+    }
   };
 
   return (
+    <>
     <View style={[styles.card, { backgroundColor: theme.surface }]}>
       <TouchableOpacity style={styles.header} onPress={() => setExpanded((v) => !v)}>
         <View style={styles.headerTextWrap}>
@@ -77,16 +172,25 @@ export function TraderPaymentPanel() {
 
               <TouchableOpacity
                 style={[styles.button, { backgroundColor: theme.primary }]}
-                onPress={onPay}
-                disabled={saving}
+                onPress={onPayWithStripe}
+                disabled={saving || stripePaying}
               >
-                {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('versement.recordPayment')}</Text>}
+                {stripePaying ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t('versement.payWithCard')}</Text>}
               </TouchableOpacity>
             </>
           )}
         </View>
       )}
     </View>
+    <PaymentSuccessModal
+      visible={showSuccessModal}
+      onDismiss={handleSuccessModalDismiss}
+      title={t('versement.paymentSuccessTitle')}
+      subtitle={t('versement.paymentSaved')}
+      buttonLabel={t('versement.backToHome')}
+      autoRedirectDelayMs={2500}
+    />
+    </>
   );
 }
 
@@ -135,4 +239,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   buttonText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  buttonSecondary: {
+    marginTop: 8,
+    padding: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  buttonSecondaryText: { fontSize: 14, fontWeight: '600' },
 });

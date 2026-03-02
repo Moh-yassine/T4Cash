@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
+import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { LineChart, BarChart } from 'react-native-gifted-charts';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -18,6 +19,130 @@ import { getTraderShare, INITIAL_CAPITAL_EUR } from '../constants/trading';
 
 type Period = 'day' | 'week' | 'month' | 'year';
 type ViewMode = 'capital' | 'pnl';
+
+const PADDING = { left: 40, right: 20, top: 16, bottom: 32 };
+
+function WebCapitalChart({
+  capitalData,
+  barData,
+  viewMode,
+  theme,
+  currentCapital,
+  returnPercent,
+  INITIAL_CAPITAL_EUR,
+}: {
+  capitalData: { value?: number; label?: string }[];
+  barData: { value: number; label: string }[];
+  viewMode: ViewMode;
+  theme: { success: string; danger: string; text: string; textSecondary: string };
+  currentCapital: number;
+  returnPercent: number;
+  INITIAL_CAPITAL_EUR: number;
+}) {
+  const chartWidth = Math.max(280, Dimensions.get('window').width - 80);
+  const chartHeight = 200;
+
+  if (viewMode === 'capital' && capitalData.length > 1) {
+    const vals = capitalData.map((d) => Number(d.value) ?? 0);
+    const min = Math.min(...vals);
+    const max = Math.max(...vals);
+    const range = max - min || 1;
+    const w = chartWidth - PADDING.left - PADDING.right;
+    const h = chartHeight - PADDING.top - PADDING.bottom;
+    const n = vals.length;
+    const points: { x: number; y: number }[] = vals.map((v, i) => ({
+      x: PADDING.left + (i / Math.max(n - 1, 1)) * w,
+      y: PADDING.top + h - ((v - min) / range) * h,
+    }));
+    const linePath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+    const areaPath = `${linePath} L ${points[points.length - 1].x} ${PADDING.top + h} L ${points[0].x} ${PADDING.top + h} Z`;
+    const color = currentCapital >= INITIAL_CAPITAL_EUR ? theme.success : theme.danger;
+
+    return (
+      <View style={webChartStyles.container}>
+        <Svg width={chartWidth} height={chartHeight} style={{ alignSelf: 'center' }}>
+          <Defs>
+            <LinearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={color} stopOpacity="0.35" />
+              <Stop offset="1" stopColor={color} stopOpacity="0.05" />
+            </LinearGradient>
+          </Defs>
+          <Path d={areaPath} fill="url(#areaGrad)" />
+          <Path d={linePath} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+          {points.map((p, i) => (
+            <Path
+              key={i}
+              d={`M ${p.x} ${p.y} m -3 0 a 3 3 0 1 1 6 0 a 3 3 0 1 1 -6 0`}
+              fill={color}
+            />
+          ))}
+        </Svg>
+        <View style={[webChartStyles.labels, { width: chartWidth }]}>
+          {capitalData.map((d, i) => (
+            <Text key={i} style={[webChartStyles.label, { color: theme.textSecondary }]} numberOfLines={1}>
+              {d.label || String(i + 1)}
+            </Text>
+          ))}
+        </View>
+        <Text style={[webChartStyles.capital, { color: theme.text }]}>
+          {currentCapital.toFixed(2)} € ({returnPercent >= 0 ? '+' : ''}{returnPercent.toFixed(1)} %)
+        </Text>
+      </View>
+    );
+  }
+
+  if (viewMode === 'pnl' && barData.length > 0) {
+    const maxAbs = Math.max(...barData.map((b) => Math.abs(b.value)), 1);
+    const h = chartHeight - PADDING.top - PADDING.bottom;
+    const midY = PADDING.top + h / 2;
+    const barW = Math.max(12, (chartWidth - PADDING.left - PADDING.right - barData.length * 6) / barData.length);
+
+    return (
+      <View style={webChartStyles.container}>
+        <Svg width={chartWidth} height={chartHeight} style={{ alignSelf: 'center' }}>
+          {barData.map((d, i) => {
+            const pct = (Math.abs(d.value) / maxAbs) * 0.85;
+            const barH = Math.max(6, pct * (h / 2));
+            const x = PADDING.left + i * (barW + 6) + 2;
+            const y = d.value >= 0 ? midY - barH : midY;
+            const bh = barH;
+            return (
+              <Path
+                key={i}
+                d={`M ${x} ${y} h ${barW} v ${bh} h -${barW} Z`}
+                fill={d.value >= 0 ? theme.success : theme.danger}
+              />
+            );
+          })}
+        </Svg>
+        <View style={[webChartStyles.labels, { width: chartWidth }]}>
+          {barData.map((d, i) => (
+            <Text key={i} style={[webChartStyles.label, { color: theme.textSecondary }]} numberOfLines={1}>
+              {d.label}
+            </Text>
+          ))}
+        </View>
+        <Text style={[webChartStyles.capital, { color: theme.text }]}>
+          {currentCapital.toFixed(2)} € ({returnPercent >= 0 ? '+' : ''}{returnPercent.toFixed(1)} %)
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View style={webChartStyles.container}>
+      <Text style={[webChartStyles.empty, { color: theme.textSecondary }]}>Aucune donnée</Text>
+    </View>
+  );
+}
+
+const webChartStyles = StyleSheet.create({
+  container: { padding: 16, alignItems: 'center', minHeight: 200 },
+  labels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingHorizontal: 40 },
+  label: { fontSize: 9, flex: 1, textAlign: 'center' },
+  capital: { fontSize: 18, fontWeight: '700', marginTop: 12 },
+  empty: { fontSize: 14 },
+});
 
 export function ChartScreen() {
   const { theme } = useTheme();
@@ -242,57 +367,64 @@ export function ChartScreen() {
                 : t('chart.dailyPnl')}
             </Text>
             {Platform.OS === 'web' ? (
-              <View style={[styles.webChartPlaceholder, { backgroundColor: theme.surface }]}>
-                <Text style={[styles.webChartText, { color: theme.textSecondary }]}>
-                  {viewMode === 'capital'
-                    ? capitalData.map((p) => `${p.value?.toFixed(0)}€`).join(' → ')
-                    : barData.map((p) => `${p.label}: ${p.value >= 0 ? '+' : ''}${p.value}€`).join(' · ')}
-                </Text>
-                <Text style={[styles.webChartCapital, { color: theme.text }]}>
-                  {currentCapital.toFixed(2)} € ({returnPercent >= 0 ? '+' : ''}{returnPercent.toFixed(1)} %)
-                </Text>
-              </View>
+              <WebCapitalChart
+                capitalData={capitalData}
+                barData={barData}
+                viewMode={viewMode}
+                theme={theme}
+                currentCapital={currentCapital}
+                returnPercent={returnPercent}
+                INITIAL_CAPITAL_EUR={INITIAL_CAPITAL_EUR}
+              />
             ) : viewMode === 'capital' && capitalData.length > 1 ? (
-              <LineChart
-                data={capitalData}
-                width={chartWidth}
-                height={chartHeight}
-                color={currentCapital >= INITIAL_CAPITAL_EUR ? theme.success : theme.danger}
-                thickness={2}
-                hideDataPoints={capitalData.length > 10}
-                noOfSections={4}
-                areaChart
-                startFillColor={currentCapital >= INITIAL_CAPITAL_EUR ? theme.success : theme.danger}
-                endFillColor={currentCapital >= INITIAL_CAPITAL_EUR ? theme.success : theme.danger}
-                startOpacity={0.35}
-                endOpacity={0.05}
-                xAxisColor={theme.textSecondary}
-                yAxisColor={theme.textSecondary}
-                backgroundColor="transparent"
-                initialSpacing={20}
-                endSpacing={20}
-                yAxisTextStyle={{ color: theme.textSecondary, fontSize: 10 }}
-                xAxisLabelTextStyle={{ color: theme.textSecondary, fontSize: 10 }}
-                rulesColor={theme.chartGrid}
-              />
+              <View style={{ width: chartWidth, height: chartHeight }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <LineChart
+                    data={capitalData}
+                    width={Math.max(chartWidth, capitalData.length * 40)}
+                    height={chartHeight}
+                    color={currentCapital >= INITIAL_CAPITAL_EUR ? theme.success : theme.danger}
+                    thickness={2}
+                    hideDataPoints={capitalData.length > 10}
+                    noOfSections={4}
+                    areaChart
+                    startFillColor={currentCapital >= INITIAL_CAPITAL_EUR ? theme.success : theme.danger}
+                    endFillColor={currentCapital >= INITIAL_CAPITAL_EUR ? theme.success : theme.danger}
+                    startOpacity={0.35}
+                    endOpacity={0.05}
+                    xAxisColor={theme.textSecondary}
+                    yAxisColor={theme.textSecondary}
+                    backgroundColor="transparent"
+                    initialSpacing={20}
+                    endSpacing={20}
+                    yAxisTextStyle={{ color: theme.textSecondary, fontSize: 10 }}
+                    xAxisLabelTextStyle={{ color: theme.textSecondary, fontSize: 10 }}
+                    rulesColor={theme.chartGrid}
+                  />
+                </ScrollView>
+              </View>
             ) : viewMode === 'pnl' && barData.length > 0 ? (
-              <BarChart
-                data={barData}
-                width={chartWidth}
-                height={chartHeight}
-                barWidth={Math.max(12, (chartWidth - 60) / barData.length - 4)}
-                noOfSections={4}
-                xAxisColor={theme.textSecondary}
-                yAxisColor={theme.textSecondary}
-                yAxisTextStyle={{ color: theme.textSecondary, fontSize: 10 }}
-                xAxisLabelTextStyle={{ color: theme.textSecondary, fontSize: 10 }}
-                hideRules={false}
-                rulesColor={theme.chartGrid}
-                barBorderRadius={4}
-                showVerticalLines={false}
-                initialSpacing={20}
-                endSpacing={20}
-              />
+              <View style={{ width: chartWidth, height: chartHeight }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <BarChart
+                    data={barData}
+                    width={Math.max(chartWidth, barData.length * 36)}
+                    height={chartHeight}
+                    barWidth={28}
+                    noOfSections={4}
+                    xAxisColor={theme.textSecondary}
+                    yAxisColor={theme.textSecondary}
+                    yAxisTextStyle={{ color: theme.textSecondary, fontSize: 10 }}
+                    xAxisLabelTextStyle={{ color: theme.textSecondary, fontSize: 10 }}
+                    hideRules={false}
+                    rulesColor={theme.chartGrid}
+                    barBorderRadius={4}
+                    showVerticalLines={false}
+                    initialSpacing={20}
+                    endSpacing={20}
+                  />
+                </ScrollView>
+              </View>
             ) : (
               <View style={styles.emptyChart}>
                 <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
@@ -396,7 +528,4 @@ const styles = StyleSheet.create({
   },
   emptyText: { fontSize: 15, fontWeight: '600' },
   emptySubtext: { fontSize: 12, marginTop: 8 },
-  webChartPlaceholder: { padding: 20, borderRadius: 12 },
-  webChartText: { fontSize: 12, marginBottom: 8 },
-  webChartCapital: { fontSize: 18, fontWeight: '700' },
 });
