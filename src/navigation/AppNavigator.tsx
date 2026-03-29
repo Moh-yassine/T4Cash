@@ -18,6 +18,7 @@ import { VersementScreen } from '../screens/VersementScreen';
 import { ChartScreen } from '../screens/ChartScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { AdminUsersScreen } from '../screens/AdminUsersScreen';
+import { BotScreen } from '../screens/BotScreen';
 
 const TAB_ICON_SIZE = 24;
 
@@ -30,6 +31,7 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Versement: undefined;
+  Bot: undefined;
   Chart: undefined;
   Profile: undefined;
   Settings: undefined;
@@ -100,6 +102,21 @@ function MainTabs() {
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons
               name={focused ? 'wallet' : 'wallet-outline'}
+              size={size ?? TAB_ICON_SIZE}
+              color={color}
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Bot"
+        component={BotScreen}
+        options={{
+          title: t('bot.title'),
+          tabBarLabel: t('bot.title'),
+          tabBarIcon: ({ focused, color, size }) => (
+            <Ionicons
+              name={focused ? 'hardware-chip' : 'hardware-chip-outline'}
               size={size ?? TAB_ICON_SIZE}
               color={color}
             />

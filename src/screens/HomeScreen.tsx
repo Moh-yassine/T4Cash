@@ -9,8 +9,6 @@ import { AnimatedScreen } from '../components/AnimatedScreen';
 import { useVersementStats } from '../hooks/useVersementStats';
 import type { RootStackParamList } from '../navigation/AppNavigator';
 
-import { OBJECTIF_QUOTIDIEN_EUR } from '../constants/trading';
-
 export function HomeScreen() {
   const { theme } = useTheme();
   const { t } = useLanguage();
@@ -18,17 +16,11 @@ export function HomeScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     totalNet,
-    objectifMensuel,
     traderShareTotal,
-    workingDaysInMonth,
     totalGains,
     totalPertes,
     daysWithEntries,
   } = useVersementStats();
-
-  const progressPercent = objectifMensuel > 0
-    ? Math.min(100, (totalNet / objectifMensuel) * 100)
-    : 0;
 
   return (
     <AnimatedScreen style={[styles.container, { backgroundColor: theme.background }]}>
@@ -45,22 +37,8 @@ export function HomeScreen() {
         <Text style={[styles.cardTitle, { color: theme.textSecondary }]}>
           {t('home.summary')}
         </Text>
-        <View style={[styles.barBg, { backgroundColor: theme.surfaceVariant }]}>
-          <View
-            style={[
-              styles.barFill,
-              {
-                width: `${progressPercent}%`,
-                backgroundColor: progressPercent >= 100 ? theme.success : theme.primary,
-              },
-            ]}
-          />
-        </View>
         <Text style={[styles.amount, { color: theme.text }]}>
-          {totalNet.toFixed(2)} € / {objectifMensuel.toFixed(0)} €
-        </Text>
-        <Text style={[styles.objective, { color: theme.textSecondary }]}>
-          {t('home.objectiveDaily')} {OBJECTIF_QUOTIDIEN_EUR} € · {workingDaysInMonth} {t('home.workingDays')}
+          {totalNet.toFixed(2)} €
         </Text>
       </View>
 
@@ -132,10 +110,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardTitle: { fontSize: 12, marginBottom: 8, textTransform: 'uppercase' },
-  barBg: { height: 8, borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
-  barFill: { height: '100%', borderRadius: 4 },
   amount: { fontSize: 24, fontWeight: '700' },
-  objective: { fontSize: 12, marginTop: 4 },
   traderAmount: { fontSize: 28, fontWeight: '700' },
   days: { fontSize: 12, marginTop: 4 },
   row: { flexDirection: 'row', gap: 12, marginTop: 8 },

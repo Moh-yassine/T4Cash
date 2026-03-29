@@ -31,10 +31,21 @@ create table if not exists public.trader_payments (
   created_at timestamptz default now()
 );
 
+create table if not exists public.mt5_credentials (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  mt5_login text not null,
+  mt5_server text,
+  mt5_password text not null,
+  lot_size numeric not null default 0.02 check (lot_size > 0),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 -- RLS
 alter table public.profiles enable row level security;
 alter table public.versements enable row level security;
 alter table public.trader_payments enable row level security;
+alter table public.mt5_credentials enable row level security;
 
 create policy "Users can read own profile"
   on public.profiles for select
@@ -67,6 +78,18 @@ create policy "Users can read own trader payments"
 create policy "Users can insert own trader payments"
   on public.trader_payments for insert
   with check (auth.uid() = user_id);
+
+create policy "Users can read own mt5 credentials"
+  on public.mt5_credentials for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own mt5 credentials"
+  on public.mt5_credentials for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update own mt5 credentials"
+  on public.mt5_credentials for update
+  using (auth.uid() = user_id);
 
 create or replace function public.is_admin(target_user_id uuid)
 returns boolean
@@ -122,7 +145,7 @@ begin
     p.username,
     coalesce(d.total_due, 0)::numeric as total_due,
     coalesce(pa.total_paid, 0)::numeric as total_paid,
-    coalesce(d.total_due, 0)::numeric as remaining
+    greatest(coalesce(d.total_due, 0) - coalesce(pa.total_paid, 0), 0)::numeric as remaining
   from public.profiles p
   left join due_by_user d on d.user_id = p.id
   left join paid_by_user pa on pa.user_id = p.id

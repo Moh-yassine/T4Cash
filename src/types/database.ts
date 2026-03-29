@@ -89,6 +89,35 @@ export interface Database {
           created_at?: string;
         };
       };
+      mt5_credentials: {
+        Row: {
+          user_id: string;
+          mt5_login: string;
+          mt5_server: string | null;
+          mt5_password: string;
+          lot_size: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          mt5_login: string;
+          mt5_server?: string | null;
+          mt5_password: string;
+          lot_size?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          mt5_login?: string;
+          mt5_server?: string | null;
+          mt5_password?: string;
+          lot_size?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 }
@@ -98,3 +127,4 @@ export type Versement = Database['public']['Tables']['versements']['Row'];
 export type VersementInsert = Database['public']['Tables']['versements']['Insert'];
 export type TraderPayment = Database['public']['Tables']['trader_payments']['Row'];
 export type TraderPaymentInsert = Database['public']['Tables']['trader_payments']['Insert'];
+export type Mt5Credentials = Database['public']['Tables']['mt5_credentials']['Row'];

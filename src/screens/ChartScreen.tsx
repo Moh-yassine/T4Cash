@@ -15,6 +15,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { AnimatedScreen } from '../components/AnimatedScreen';
+import { PerformanceCalendar } from '../components/PerformanceCalendar';
 import { getTraderShare, INITIAL_CAPITAL_EUR } from '../constants/trading';
 
 type Period = 'day' | 'week' | 'month' | 'year';
@@ -252,6 +253,13 @@ export function ChartScreen() {
   return (
     <AnimatedScreen style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+        <View style={styles.calendarSection}>
+          <Text style={[styles.calendarTitle, { color: theme.textSecondary }]}>
+            {t('chart.calendarTitle')}
+          </Text>
+          <PerformanceCalendar />
+        </View>
+
         <View style={styles.periodRow}>
           {periods.map((p) => (
             <TouchableOpacity
@@ -528,4 +536,6 @@ const styles = StyleSheet.create({
   },
   emptyText: { fontSize: 15, fontWeight: '600' },
   emptySubtext: { fontSize: 12, marginTop: 8 },
+  calendarSection: { marginBottom: 24 },
+  calendarTitle: { fontSize: 12, textTransform: 'uppercase', marginBottom: 12 },
 });

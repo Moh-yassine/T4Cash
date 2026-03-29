@@ -3,8 +3,6 @@ import { useFocusEffect } from '@react-navigation/native';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  getWorkingDaysInMonth,
-  getObjectifMensuel,
   getTraderShare,
 } from '../constants/trading';
 
@@ -57,24 +55,16 @@ export function useVersementStats() {
     }, [fetchVersements])
   );
 
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-
   const {
     totalGains,
     totalPertes,
     totalNet,
-    workingDaysInMonth,
-    objectifMensuel,
     traderShareTotal,
     daysWithEntries,
   } = useMemo(() => {
     const totalGains = versements.reduce((s, v) => s + Number(v.gains), 0);
     const totalPertes = versements.reduce((s, v) => s + Number(v.pertes), 0);
     const totalNet = totalGains - totalPertes;
-    const workingDaysInMonth = getWorkingDaysInMonth(year, month);
-    const objectifMensuel = getObjectifMensuel(year, month);
     const traderShareTotal = versements.reduce((sum, v) => {
       const net = Number(v.gains) - Number(v.pertes);
       return sum + getTraderShare(net);
@@ -84,20 +74,16 @@ export function useVersementStats() {
       totalGains,
       totalPertes,
       totalNet,
-      workingDaysInMonth,
-      objectifMensuel,
       traderShareTotal,
       daysWithEntries,
     };
-  }, [versements, year, month]);
+  }, [versements]);
 
   return {
     versements,
     totalGains,
     totalPertes,
     totalNet,
-    workingDaysInMonth,
-    objectifMensuel,
     traderShareTotal,
     daysWithEntries,
   };

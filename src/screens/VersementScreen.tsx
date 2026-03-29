@@ -15,7 +15,13 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { AnimatedScreen } from '../components/AnimatedScreen';
 import { TraderPaymentPanel } from '../components/TraderPaymentPanel';
-import { OBJECTIF_QUOTIDIEN_EUR, getTraderShare, isWorkingDay } from '../constants/trading';
+import { getTraderShare, isWorkingDay } from '../constants/trading';
+
+function parseAmount(input: string): number {
+  const normalized = input.replace(',', '.').trim();
+  const value = parseFloat(normalized);
+  return Number.isFinite(value) ? value : 0;
+}
 
 export function VersementScreen() {
   const { theme } = useTheme();
@@ -45,8 +51,8 @@ export function VersementScreen() {
 
   const handleSave = async () => {
     if (!user) return;
-    const g = parseFloat(gains) || 0;
-    const p = parseFloat(pertes) || 0;
+    const g = parseAmount(gains);
+    const p = parseAmount(pertes);
     const nextGains = (todayEntry?.gains ?? 0) + g;
     const nextPertes = (todayEntry?.pertes ?? 0) + p;
     setLoading(true);
@@ -69,9 +75,8 @@ export function VersementScreen() {
     }
   };
 
-  const net = (parseFloat(gains) || 0) - (parseFloat(pertes) || 0);
+  const net = parseAmount(gains) - parseAmount(pertes);
   const traderPart = getTraderShare(net);
-  const dayProgress = Math.min(100, (net / OBJECTIF_QUOTIDIEN_EUR) * 100);
 
   return (
     <AnimatedScreen style={[styles.container, { backgroundColor: theme.background }]}>
@@ -86,15 +91,6 @@ export function VersementScreen() {
               {t('versement.weekendNote')}
             </Text>
           )}
-
-          <View style={[styles.objectiveBadge, { backgroundColor: theme.surfaceVariant }]}>
-            <Text style={[styles.objectiveLabel, { color: theme.textSecondary }]}>
-              {t('versement.dailyObjective')}
-            </Text>
-            <Text style={[styles.objectiveValue, { color: theme.text }]}>
-              {OBJECTIF_QUOTIDIEN_EUR} €
-            </Text>
-          </View>
 
           <Text style={[styles.label, { color: theme.textSecondary }]}>
             {t('versement.gains')}
@@ -121,17 +117,6 @@ export function VersementScreen() {
 
           {(gains !== '' || pertes !== '') && (
             <View style={[styles.preview, { backgroundColor: theme.surfaceVariant }]}>
-              <View style={[styles.progressBarBg, { backgroundColor: theme.border }]}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    {
-                      width: `${dayProgress}%`,
-                      backgroundColor: net >= OBJECTIF_QUOTIDIEN_EUR ? theme.success : theme.primary,
-                    },
-                  ]}
-                />
-              </View>
               <Text style={[styles.previewText, { color: theme.text }]}>
                 {t('versement.netDay')} : {net.toFixed(2)} €
               </Text>
@@ -176,16 +161,6 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 12, textTransform: 'uppercase', marginBottom: 4 },
   date: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
   weekendNote: { fontSize: 12, marginBottom: 12 },
-  objectiveBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  objectiveLabel: { fontSize: 12 },
-  objectiveValue: { fontSize: 18, fontWeight: '700' },
   label: { fontSize: 12, marginBottom: 6 },
   input: {
     borderWidth: 1,
@@ -199,8 +174,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
   },
-  progressBarBg: { height: 6, borderRadius: 3, overflow: 'hidden', marginBottom: 8 },
-  progressBarFill: { height: '100%', borderRadius: 3 },
   previewText: { fontSize: 14, fontWeight: '600' },
   button: {
     padding: 16,

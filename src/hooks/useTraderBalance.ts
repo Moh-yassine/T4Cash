@@ -48,7 +48,7 @@ export function useTraderBalance() {
     const paid = fromCents(paidCents);
     setTotalDue(due);
     setTotalPaid(paid);
-    setRemaining(Math.max(0, due));
+    setRemaining(Math.max(0, due - paid));
     setPayments(traderPayments.map((row) => ({ ...row, amount: Number(row.amount) })));
     setLoading(false);
   }, [user]);
