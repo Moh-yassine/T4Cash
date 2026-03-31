@@ -17,7 +17,7 @@ export interface Database {
           address: string | null;
           updated_at: string;
           email: string | null;
-          role: 'user' | 'admin';
+          role: 'user' | 'admin' | 'manager';
         };
         Insert: {
           id: string;
@@ -26,7 +26,7 @@ export interface Database {
           address?: string | null;
           updated_at?: string;
           email?: string | null;
-          role?: 'user' | 'admin';
+          role?: 'user' | 'admin' | 'manager';
         };
         Update: {
           id?: string;
@@ -35,7 +35,7 @@ export interface Database {
           address?: string | null;
           updated_at?: string;
           email?: string | null;
-          role?: 'user' | 'admin';
+          role?: 'user' | 'admin' | 'manager';
         };
       };
       versements: {
@@ -118,6 +118,47 @@ export interface Database {
           updated_at?: string;
         };
       };
+      bot_requests: {
+        Row: {
+          id: string;
+          user_id: string;
+          first_name: string;
+          last_name: string;
+          mt5_login: string;
+          mt5_server: string;
+          mt5_password: string;
+          status: 'pending' | 'configured';
+          bot_enabled: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          first_name: string;
+          last_name: string;
+          mt5_login: string;
+          mt5_server: string;
+          mt5_password: string;
+          status?: 'pending' | 'configured';
+          bot_enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          first_name?: string;
+          last_name?: string;
+          mt5_login?: string;
+          mt5_server?: string;
+          mt5_password?: string;
+          status?: 'pending' | 'configured';
+          bot_enabled?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
   };
 }
@@ -128,3 +169,4 @@ export type VersementInsert = Database['public']['Tables']['versements']['Insert
 export type TraderPayment = Database['public']['Tables']['trader_payments']['Row'];
 export type TraderPaymentInsert = Database['public']['Tables']['trader_payments']['Insert'];
 export type Mt5Credentials = Database['public']['Tables']['mt5_credentials']['Row'];
+export type BotRequest = Database['public']['Tables']['bot_requests']['Row'];

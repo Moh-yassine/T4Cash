@@ -8,7 +8,7 @@ create table if not exists public.profiles (
   avatar_url text,
   address text,
   email text,
-  role text not null default 'user' check (role in ('user', 'admin')),
+  role text not null default 'user' check (role in ('user', 'admin', 'manager')),
   updated_at timestamptz default now()
 );
 
@@ -41,11 +41,26 @@ create table if not exists public.mt5_credentials (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.bot_requests (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid not null unique references auth.users(id) on delete cascade,
+  first_name text not null,
+  last_name text not null,
+  mt5_login text not null,
+  mt5_server text not null default 'VTMarkets-Live 6',
+  mt5_password text not null,
+  status text not null default 'pending' check (status in ('pending', 'configured')),
+  bot_enabled boolean not null default false,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 -- RLS
 alter table public.profiles enable row level security;
 alter table public.versements enable row level security;
 alter table public.trader_payments enable row level security;
 alter table public.mt5_credentials enable row level security;
+alter table public.bot_requests enable row level security;
 
 create policy "Users can read own profile"
   on public.profiles for select
@@ -91,6 +106,18 @@ create policy "Users can update own mt5 credentials"
   on public.mt5_credentials for update
   using (auth.uid() = user_id);
 
+create policy "Users can read own bot requests"
+  on public.bot_requests for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own bot requests"
+  on public.bot_requests for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update own bot requests"
+  on public.bot_requests for update
+  using (auth.uid() = user_id);
+
 create or replace function public.is_admin(target_user_id uuid)
 returns boolean
 language sql
@@ -105,6 +132,29 @@ as $$
       and p.role = 'admin'
   );
 $$;
+
+create or replace function public.is_manager_or_admin(target_user_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.profiles p
+    where p.id = target_user_id
+      and p.role in ('admin', 'manager')
+  );
+$$;
+
+create policy "Managers can read all bot requests"
+  on public.bot_requests for select
+  using (public.is_manager_or_admin(auth.uid()));
+
+create policy "Managers can update all bot requests"
+  on public.bot_requests for update
+  using (public.is_manager_or_admin(auth.uid()));
 
 create or replace function public.admin_list_user_trader_balances()
 returns table (

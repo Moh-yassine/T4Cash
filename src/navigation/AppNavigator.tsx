@@ -19,6 +19,7 @@ import { ChartScreen } from '../screens/ChartScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { AdminUsersScreen } from '../screens/AdminUsersScreen';
 import { BotScreen } from '../screens/BotScreen';
+import { ManagerBotScreen } from '../screens/ManagerBotScreen';
 
 const TAB_ICON_SIZE = 24;
 
@@ -50,6 +51,7 @@ const RootStack = createNativeStackNavigator<RootStackParamList>();
 function MainTabs() {
   const { theme } = useTheme();
   const { t } = useLanguage();
+  const { profile } = useAuth();
   const insets = useSafeAreaInsets();
 
   const tabBarPaddingBottom = Platform.OS === 'web'
@@ -110,7 +112,7 @@ function MainTabs() {
       />
       <Tab.Screen
         name="Bot"
-        component={BotScreen}
+        component={profile?.role === 'manager' ? ManagerBotScreen : BotScreen}
         options={{
           title: t('bot.title'),
           tabBarLabel: t('bot.title'),
@@ -175,7 +177,7 @@ function MainTabs() {
 export function AppNavigator() {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const { user, loading, isRecoverySession } = useAuth();
+  const { user, loading, isRecoverySession, profile } = useAuth();
 
   if (loading) {
     return (
@@ -226,11 +228,13 @@ export function AppNavigator() {
           }}
         >
           <RootStack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
-          <RootStack.Screen
-            name="AdminUsers"
-            component={AdminUsersScreen}
-            options={{ title: t('admin.title') }}
-          />
+          {profile?.role === 'admin' && (
+            <RootStack.Screen
+              name="AdminUsers"
+              component={AdminUsersScreen}
+              options={{ title: t('admin.title') }}
+            />
+          )}
         </RootStack.Navigator>
       ) : (
         <AuthStack.Navigator
